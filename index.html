@@ -1,328 +1,66 @@
-
-  <!doctype html>
-  <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Poker</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StartPage</title>
     <style>
-      body { font-family: sans-serif; color: white; text-align: center; height: 100vh; margin: 0; background-color: green; }
-      button { background-image: linear-gradient(45deg, rgb(16, 159, 164), blue); border-radius: 20px; cursor: pointer; transition: background-image 0.3s; }
-      button:hover { background-image: linear-gradient(45deg, blue, rgb(16, 159, 164)); }
-      .cards { display: flex; justify-content: center; gap: 10px; margin: 10px; }
-      .card { width: 60px; height: 80px; background: white; color: black; display: flex; align-items: center; justify-content: center; border-radius: 5px; font-weight: bold; }
-      .red{ color: red; }
-      .pokername{ font-size: 80px; font-weight: 700; margin: 0; color: white; }
+      body{
+        text-align: center;
+        background-image: linear-gradient(90deg,  rgb(215, 179, 106), rgb(125, 3, 125), rgb(85, 24, 122));
+        font-family: sans-serif;
+      }
+      .startGame{
+        width: 400px;
+        height: 250px;
+        margin-top: 100px;
+        background-image: linear-gradient(90deg,  rgb(215, 179, 106), rgb(125, 3, 125), rgb(85, 24, 122));
+        border-radius: 30px;
+        font-size: 40px;
+        font-family: sans-serif;
+        cursor: pointer;
+      }
+      .startGame:hover{
+        background-image: linear-gradient(90deg,  rgb(226, 167, 57), rgb(167, 12, 167), rgb(91, 22, 135));
+      }
+
+      .lastGame{
+        font-size: 30px;
+        font-weight: bold;
+        color: rgb(204, 153, 25);
+        animation: 3s lastgameanim ease-in;
+      }
+
+      @keyframes lastgameanim{
+        0%{opacity: 0%;}
+        100%{opacity: 100%;}
+      }
+      
+      
+      
     </style>
-  </head>
-  <body>
-    <h2 class="pokername">Poker</h2>
-    <button onclick="deal()">Deal Cards</button>
-    <button id="CallButton">Call</button>
-    <button id="CheckButton">Check</button>
-    <button id="RaiseButton">Raise</button>
-    <button id="FoldButton">Fold</button> <br><br>
-    <form action="">Raise amount: <input style="width: 50px;" min="5" max="" type="number" value="10" name="raiseAmount" id="raiseAmount"></form>
-    <br>
+</head>
+<body>
+    <button id="startGame" onclick="startGame()" class="startGame">Start</button> <br><br><br>
+    <div id="lastGame" class="lastGame"></div>
+    
 
-    <div>
-      Pot: <span id="amount"></span><br/>
-      Money: <span id="money"></span> <br>
-      Ai Money: <span id="aiMoney"></span>
-    </div>
-
-    <div>
-      <h3>Cards</h3>
-      <div id="fivecards" class="cards"></div>
-    </div>
-    <div>
-      <h3>Your Hand</h3>
-      <div id="player" class="cards"></div>
-    </div>
-    <div>
-      <span>AI: </span><span id="aimove" style="font-weight: bold; color: bisque;"></span>
-    </div>
-    <div>
-      <h3>Computer's Hand</h3>
-      <div id="computer" class="cards"></div>
-    </div>
-    <div>
-      <h3>Winner</h3>
-      <div id="winner"></div>
-    </div>
-
-  <script>
-  const suits = ['♠','♥','♦','♣'];
-  const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-  const handNames = ["High Card","One Pair","Two Pair","Three of a Kind","Straight","Flush","Full House","Four of a Kind","Straight Flush","Royal Flush"];
-
-  function createDeck() {
-    let deck = [];
-    for (let s of suits) for (let r of ranks) deck.push(r + s);
-    return deck;
-  }
-  function shuffle(deck) {
-    for (let i = deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [deck[i], deck[j]] = [deck[j], deck[i]];
+<script>
+    function startGame(){
+        window.location.href = "pokergame_js.html";
     }
+window.addEventListener("load", () => {
+  let winner = localStorage.getItem("winner");
+  if (winner) {
+    document.getElementById("lastGame").innerText = winner + " won the last game.";
+    // localStorage.removeItem("winner");
   }
-
-  function combinations(arr, k) {
-    if (k === 0) return [[]];
-    if (arr.length < k) return [];
-    let [first, ...rest] = arr;
-    let withFirst = combinations(rest, k - 1).map(c => [first, ...c]);
-    let withoutFirst = combinations(rest, k);
-    return withFirst.concat(withoutFirst);
-  }
-  function rankValue(card) { return ranks.indexOf(card.slice(0, -1)); }
-  function scoreHand(cards) {
-    let values = cards.map(rankValue).sort((a,b)=>a-b);
-    let suitsArr = cards.map(c => c.slice(-1));
-    let flush = suitsArr.every(s => s === suitsArr[0]);
-    let straight = values.every((v,i)=> i===0 || v === values[i-1]+1);
-    let rankMap = {};
-    for (let c of cards) {
-      let r = c.slice(0, -1);
-      rankMap[r] = (rankMap[r] || 0) + 1;
-    }
-    let counts = Object.values(rankMap).sort((a,b)=>b-a);
-    let high = Math.max(...values);
-    if (straight && flush) return { score: (high===12 ? 9 : 8), high };
-    if (counts[0] === 4) return { score: 7, high };
-    if (counts[0] === 3 && counts[1] === 2) return { score: 6, high };
-    if (flush) return { score: 5, high };
-    if (straight) return { score: 4, high };
-    if (counts[0] === 3) return { score: 3, high };
-    if (counts[0] === 2 && counts[1] === 2) return { score: 2, high };
-    if (counts[0] === 2) return { score: 1, high };
-    return { score: 0, high };
-  }
-  function bestHand(seven) {
-    let best = null;
-    for (let h of combinations(seven, 5)) {
-      let score = scoreHand(h);
-      if (!best || score.score > best.score || (score.score === best.score && score.high > best.high)) best = score;
-    }
-    return best;
-  }
+});
+</script>
 
 
-  let callResolver = null;
-  function waitForAction() { return new Promise(resolve => { callResolver = resolve; }); }
-  function setupButtons() {
-    document.getElementById("CallButton").onclick = () => { if (callResolver) { callResolver("call"); callResolver=null; } };
-    document.getElementById("CheckButton").onclick = () => { if (callResolver) { callResolver("check"); callResolver=null; } };
-    document.getElementById("RaiseButton").onclick = () => { if (callResolver) { callResolver("raise"); callResolver=null; } };
-    document.getElementById("FoldButton").onclick = () => { if (callResolver) { callResolver("fold"); callResolver=null; } };
-  }
-  setupButtons();
+    
+    
 
-
-  let game = false;
-  let money = 1000;
-  let amount = 10;   // pot
-  let aiMoney = 1000;
-
-  function botChoice(fivecards, player, computer, toCall) {
-    let playerBest = bestHand([...fivecards, ...player]);
-    let compBest   = bestHand([...fivecards, ...computer]);
-    let rand = Math.random();
-    let actionName;
-    let bet = 0;
-
-    if (compBest.score >= playerBest.score) {
-      if (rand > 0.9) { actionName = "allin"; bet = aiMoney; }
-      else if (rand > 0.6) { actionName = "raise"; bet = toCall + Math.min(aiMoney, 50 + Math.floor(Math.random()*100)); }
-      else if (rand > 0.1) { actionName = "call"; bet = toCall; }
-      else { actionName = "fold"; bet = 0; }
-    } else {
-      if (rand > 0.98) { actionName="allin"; bet = aiMoney; }
-      else if (rand > 0.8) { actionName="raise"; bet = toCall + Math.min(aiMoney, 50 + Math.floor(Math.random()*100)); }
-      else if (rand > 0.15) { actionName="call"; bet = toCall; }
-      else { actionName="fold"; bet = 0; }
-    }
-
-    bet = Math.max(0, Math.min(bet, aiMoney));
-
-    return { action: actionName, bet };
-  }
-
-  function renderCard(c) {
-    let suit = c.slice(-1);
-    let redSuits = ['♥','♦'];
-    let cls = redSuits.includes(suit) ? "red" : "";
-    return `<div class="card ${cls}">${c}</div>`;
-  }
-
-  async function deal() {
-    if (money <= 0 || aiMoney <= 0) return;
-    if (game) return;
-    game = true;
-
-    amount = 20;
-    money -= amount/2;
-    aiMoney -= amount/2;
-    document.getElementById("winner").innerText = "";
-
-    let deck = createDeck();
-    shuffle(deck);
-
-    let fivecards = [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()];
-    let player = [deck.pop(), deck.pop()];
-    let computer = [deck.pop(), deck.pop()];
-    let flop = [fivecards[0], fivecards[1], fivecards[2]];
-
-    document.getElementById("fivecards").innerHTML = flop.map(renderCard).join('');
-    document.getElementById("player").innerHTML = player.map(renderCard).join('');
-    document.getElementById("computer").innerHTML = "";
-    updateUI();
-
-    let status;
-
-    // FLOP
-    status = await bettingRound(fivecards, player, computer);
-    if (status !== "ok") { game = false; return; }
-
-    // TURN
-    document.getElementById("fivecards").innerHTML += renderCard(fivecards[3]);
-    status = await bettingRound(fivecards, player, computer);
-    if (status !== "ok") { game = false; return; }
-
-    // RIVER
-    document.getElementById("fivecards").innerHTML += renderCard(fivecards[4]);
-    status = await bettingRound(fivecards, player, computer);
-    if (status !== "ok") { game = false; return; }
-
-    endGame("showdown", fivecards, player, computer);
-    game = false;
-  }
-
-  async function bettingRound(fivecards, player, computer) {
-    let currentBet = 0; 
-    let playerBet = 0;  
-    let aiBet = 0;   
-
-
-    while (true) {
-      
-      let toCallAI = currentBet - aiBet;
-      if (toCallAI < 0) toCallAI = 0;
-
-      let aiDecision = botChoice(fivecards, player, computer, toCallAI);
-      let action_ai = aiDecision.action;
-      let aiWantsToPut = aiDecision.bet; 
-
-      if (action_ai === "fold") {
-        endGame("fold_ai", fivecards, player, computer);
-        document.getElementById("aimove").innerText = `${action_ai}`;
-        return "fold_ai";
-      }
-
-      if (action_ai === "call") {
-        let actual = Math.min(aiWantsToPut, aiMoney);
-        aiMoney -= actual;
-        aiBet += actual;
-        amount += actual;
-      } else if (action_ai === "raise" || action_ai === "allin") {
-        let actual = Math.min(aiWantsToPut, aiMoney);
-        aiMoney -= actual;
-        aiBet += actual;
-        amount += actual;
-        currentBet = Math.max(currentBet, aiBet);
-      }
-
-      document.getElementById("aimove").innerText = `${action_ai} ${aiWantsToPut}`;
-      updateUI();
-
-      let toCallPlayer = currentBet - playerBet;
-      if (toCallPlayer < 0) toCallPlayer = 0;
-
-      let action = await waitForAction();
-
-      if (action === "fold") {
-        endGame("fold", fivecards, player, computer);
-        return "fold_player";
-      }
-      
-      document.getElementById("raiseAmount").max = Math.min(aiMoney, money);
-      let raiseAmount = parseInt(document.getElementById("raiseAmount").value) || 0;
-
-      if (action === "call") {
-        let pay = Math.min(toCallPlayer, money);
-        money -= pay;
-        playerBet += pay;
-        amount += pay;
-      } else if (action === "raise") {
-        let toPay = toCallPlayer + raiseAmount;
-        let actual = Math.min(toPay, money);
-        money -= actual;
-        playerBet += actual;
-        amount += actual;
-        currentBet = playerBet; 
-      } else if (action === "check") {
-        if (toCallPlayer > 0) {
-          
-          continue;
-        }
-      }
-
-      updateUI();
-
-      if (playerBet === currentBet && aiBet === currentBet) {
-        return "ok";
-      }
-
-    }
-  }
-
-  function updateUI() {
-    document.getElementById("money").innerText = money;
-    document.getElementById("amount").innerText = amount;
-    document.getElementById("aiMoney").innerText = aiMoney;
-  }
-
-  function round(action, fivecards, player, computer, toCall) {
-    if (action === "fold") {
-      endGame("fold", fivecards, player, computer);
-      return true;
-    }
-    return false;
-  }
-
-  function endGame(reason, fivecards, player, computer) {
-    document.getElementById("computer").innerHTML = computer.map(c => renderCard(c)).join('');
-
-    let msg = "";
-    if (reason === "fold") {
-      msg = `You folded! Ai wins the pot of ${amount}.`;
-      aiMoney += amount;
-    } else if (reason === "fold_ai") {
-      msg = `Ai folded! You win the pot of ${amount}.`;
-      money += amount;
-    } else {
-      
-      let playerBest = bestHand([...fivecards, ...player]);
-      let compBest   = bestHand([...fivecards, ...computer]);
-
-      if (playerBest.score > compBest.score || (playerBest.score === compBest.score && playerBest.high > compBest.high)) {
-        money += amount;
-        msg = `You win! Bank: ${money}. Your Combination: ${handNames[playerBest.score]}. Ai Combination: ${handNames[compBest.score]}`;
-      } else if (compBest.score > playerBest.score || (compBest.score === playerBest.score && compBest.high > playerBest.high)) {
-        aiMoney += amount;
-        msg = `Computer wins! Bank: ${money}. Your Combination: ${handNames[playerBest.score]}. Ai Combination: ${handNames[compBest.score]}`;
-      } else {
-        money += amount/2;
-        aiMoney += amount/2;
-        msg = `It's a tie! Bank: ${money}`;
-      }
-    }
-
-    amount = 0;
-    document.getElementById("winner").innerText = msg;
-    updateUI();
-    game = false;
-  }
-  </script>
-  </body>
-  </html>
+</body>
+</html>
